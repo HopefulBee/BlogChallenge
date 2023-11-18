@@ -1,7 +1,7 @@
-//jshint esversion:6
-
+//Required Modules
 const express = require("express");
 const bodyParser = require("body-parser");
+const mongoose = require("mongoose");
 const ejs = require("ejs");
 const _ = require("lodash");
 
@@ -11,60 +11,71 @@ const contactContent = "Yeah.....I'm not putting my contact online so that's tha
 
 const app = express();
 
+//App Set and Use
 app.set('view engine', 'ejs');
-
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
 
-let posts = [];
+//Adding mongoose to store documents
+main().catch(err => console.log(err));
+async function main() {
+  await mongoose.connect('mongodb://127.0.0.1:27017/blogDB');
+  //New Schema for the blog posts
+  const postSchema = new mongoose.Schema({
+      title: String,
+      content: String
+  });
+  //New model
+  const Post = mongoose.model("Post", postSchema);
 
-app.get("/", function(req, res){
-  res.render("home", {
-    startingContent: homeStartingContent,
-    posts: posts
+//Home Page
+  app.get("/", async function(req, res){
+    await Post.find({}).then(posts =>{
+      res.render("home", {
+        startingContent: homeStartingContent,
+        posts: posts
+        });
     });
-});
+  });
 
-app.get("/about", function(req, res){
-  res.render("about", {aboutContent: aboutContent});
-});
+  //Compose Section
+  app.get("/compose", function(req, res){
+    res.render("compose");
+  });
+  
+  app.post("/compose", async function(req, res){
+    const post = new Post ({
+      title: req.body.postTitle,
+      content: req.body.postBody
+    });
+    await post.save();
+    res.redirect("/");
+  });
 
-app.get("/contact", function(req, res){
-  res.render("contact", {contactContent: contactContent});
-});
-
-app.get("/compose", function(req, res){
-  res.render("compose");
-});
-
-app.post("/compose", function(req, res){
-  const post = {
-    title: req.body.postTitle,
-    content: req.body.postBody
-  };
-
-  posts.push(post);
-
-  res.redirect("/");
-
-});
-
-app.get("/posts/:postName", function(req, res){
-  const requestedTitle = _.lowerCase(req.params.postName);
-
-  posts.forEach(function(post){
-    const storedTitle = _.lowerCase(post.title);
-
-    if (storedTitle === requestedTitle) {
+  app.get("/posts/:postId", async function(req, res){
+    const requestedPostId = _.lowerCase(req.params.postId);
+    
+    await Post.findOne({_id: requestedPostId}).then(post => {
       res.render("post", {
         title: post.title,
         content: post.content
       });
-    }
+    });
+  });
+  
+  //About Page
+  app.get("/about", function(req, res){
+    res.render("about", {aboutContent: aboutContent});
+  });
+  
+  //Contact Page
+  app.get("/contact", function(req, res){
+    res.render("contact", {contactContent: contactContent});
   });
 
-});
-
-app.listen(3000, function() {
-  console.log("Server started on port 3000");
-});
+  //Server Check
+  app.listen(3000, function() {
+    console.log("Server started on port 3000");
+  });
+  
+}
