@@ -16,10 +16,15 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
 
+//Password Protection
+require('dotenv').config();
+const passWord = process.env.PASSWORD;
+
 //Adding mongoose to store documents
 main().catch(err => console.log(err));
 async function main() {
-  await mongoose.connect('mongodb://127.0.0.1:27017/blogDB');
+   await mongoose.connect('mongodb+srv://ijeomahmaria:' + passWord + '@cluster0.ejhwqhq.mongodb.net/blogDB');
+
   //New Schema for the blog posts
   const postSchema = new mongoose.Schema({
       title: String,
