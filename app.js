@@ -53,7 +53,7 @@ async function main() {
   });
 
   app.get("/posts/:postId", async function(req, res){
-    const requestedPostId = _.lowerCase(req.params.postId);
+    const requestedPostId = req.params.postId;
     
     await Post.findOne({_id: requestedPostId}).then(post => {
       res.render("post", {
